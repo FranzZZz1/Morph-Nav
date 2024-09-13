@@ -557,7 +557,6 @@ Main site content
 -------------------------------- */
 .cd-main-content {
     min-height: 100vh;
-    background-color: #548c7e;
 }
 @media only screen and (min-width: 1000px) {
     .cd-main-content {

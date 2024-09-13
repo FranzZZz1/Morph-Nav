@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     dropPadding: false,
                     dropMobilePadding: false,
                     cacheFooterPositions: true,
-                    cacheFooterDebug: true,
+                    cacheFooterDebug: false,
                     watchCachedFooterPositions: true,
                     xValues: {
                         1: -400,
