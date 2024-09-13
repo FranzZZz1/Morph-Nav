@@ -24,13 +24,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     dropActiveClass: "active",
                     navActiveClass: "active",
                     containerWidth: 1080,
-                    containerPadding: 15,
+                    containerPadding: 20,
                     dropPadding: false,
-                    dropMobilePadding: true,
+                    dropMobilePadding: false,
+                    cacheFooterPositions: true,
+                    cacheFooterDebug: true,
+                    watchCachedFooterPositions: true,
                     xValues: {
-                        1: 0,
+                        1: -400,
                         2: 0,
-                        3: -50,
+                        3: 0,
                         4: 0,
                         5: -190,
                     },
@@ -47,6 +50,26 @@ document.addEventListener("DOMContentLoaded", function () {
             this.#initErrors();
             this.#initFunctions();
             this.mq = this.#checkMq();
+
+            this.#initDropdownItemsWidth();
+        }
+
+        directions = {
+            left: "left",
+            right: "right",
+            hleft: "half-left",
+            hright: "half-right",
+        };
+
+        modes = {
+            height: "height-mode",
+            transform: "transform-mode",
+        };
+
+        #initDropdownItemsWidth() {
+            this.dropdownItems.forEach((e) => {
+                e.style.setProperty("--initial-width", e.offsetWidth + "px");
+            });
         }
 
         #initAttributes() {
@@ -55,9 +78,9 @@ document.addEventListener("DOMContentLoaded", function () {
             });
             if (typeof this.dropFooterMode === "string") {
                 if (this.dropFooterMode === "height") {
-                    this.dropdownList.classList.add("height-mode");
+                    this.dropdownList.classList.add(this.modes.height);
                 } else if (this.dropFooterMode === "transform") {
-                    this.dropdownList.classList.add("transform-mode");
+                    this.dropdownList.classList.add(this.modes.transform);
                 }
             }
         }
@@ -151,27 +174,27 @@ document.addEventListener("DOMContentLoaded", function () {
                                 }
                             }
                         }
-                    } else if (xValues === "left") {
+                    } else if (xValues === this.directions.left) {
                         offset =
                             navItemCenter -
                             ((windowWidth - containerWidth) / 2 - scrollbarWidth / 2) -
                             scrollbarWidth / 2 -
                             containerPadding;
-                    } else if (xValues === "right") {
+                    } else if (xValues === this.directions.right) {
                         offset =
                             navItemCenter -
                             ((windowWidth - containerWidth) / 2 - scrollbarWidth / 2) -
                             sectionOffset +
                             scrollbarWidth / 2 +
                             containerPadding;
-                    } else if (xValues === "half-left") {
+                    } else if (xValues === this.directions.hleft) {
                         offset =
                             navItemCenter -
                             ((windowWidth - containerWidth) / 2 - scrollbarWidth / 2) -
                             sectionOffset / 4 -
                             scrollbarWidth / 2 -
                             containerPadding;
-                    } else if (xValues === "half-right") {
+                    } else if (xValues === this.directions.hright) {
                         offset =
                             navItemCenter -
                             ((windowWidth - containerWidth) / 2 - scrollbarWidth / 2) -
@@ -199,7 +222,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     );
                 }
 
-                this.dropdownList.style.transform = `translateX(${menuTranslateX}px)`;
+                // this.dropdownList.style.transform = `translateX(${menuTranslateX}px)`;
+
+                this.dropdownList.style.setProperty(
+                    "--dropdown-list-translate-x",
+                    `${menuTranslateX}px`
+                );
             };
 
             this.positionElements = (activeMenuSectionIndex) => {
@@ -230,7 +258,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     this.element.style.setProperty("--morphNav-arrow-offset", `${arrowOffset}px`);
                 }
 
-                let sectionWidth = section.offsetWidth;
+                let sectionWidth =
+                    +section.style.getPropertyValue("--initial-width").slice(0, -2) ??
+                    section.offsetWidth;
                 let sectionHeight = section.offsetHeight;
 
                 this.dropdownList.style.width = `${sectionWidth}px`;
@@ -278,7 +308,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
                         const itemRect = item.getBoundingClientRect();
                         const selectedDropdownHeight = selectedDropdown.clientHeight;
-                        const selectedDropdownWidth = selectedContent.clientWidth;
+                        const selectedDropdownWidth =
+                            +selectedDropdown.style
+                                .getPropertyValue("--initial-width")
+                                .slice(0, -2) ?? selectedContent.clientWidth;
                         const selectedDropdownLeft =
                             itemRect.left + item.offsetWidth / 2 - selectedDropdownWidth / 2;
                         const dropdownFooterHeight =
@@ -332,12 +365,28 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             };
 
+            let isResizeHandlerAdded = false;
+            let resizeTimeout;
+
             this.updateDropdown = (dropdownItem, height, width, left, dropdownFooterHeight) => {
                 if (!this.dropdownList || !this.dropdownBg) return console.error();
 
                 this.dropdownList.style.width = `${width}px`;
                 this.dropdownList.style.height = `${height}px`;
                 this.dropdownBg.style.transform = `scaleX(${width}) scaleY(${height})`;
+
+                // const dropdownItemInitialWidth = +dropdownItem.style
+                //     .getPropertyValue("--initial-width")
+                //     .slice(0, -2);
+
+                // if (dropdownItemInitialWidth > window.innerWidth) {
+                //     dropdownItem.style.setProperty(
+                //         "--initial-width",
+                //         window.innerWidth -
+                //             (window.innerWidth - document.documentElement.offsetWidth) +
+                //             "px"
+                //     );
+                // }
 
                 const dropdownContent = this.#inspectVariable(dropdownItem, this.dropContent);
                 const dropFooter = this.#inspectVariable(
@@ -369,33 +418,127 @@ document.addEventListener("DOMContentLoaded", function () {
                                 dropdownContentPaddingBottom
                             );
 
-                            if (cachedDistances.has(dropdownItem)) {
-                                // console.log(
-                                //     "Кешированное значение:",
-                                //     cachedDistances.get(dropdownItem)
-                                // );
-                                this.dropdownFooter.style.bottom =
-                                    cachedDistances.get(dropdownItem) + "px";
-                            } else {
-                                const selectedDropdownFooter = this.#inspectVariable(
-                                    dropdownItem,
-                                    this.dropFooter,
-                                    false,
-                                    false,
-                                    false
-                                );
-                                const bottomRect =
-                                    dropdownItem.offsetHeight -
-                                    (selectedDropdownFooter.offsetTop +
-                                        selectedDropdownFooter.offsetHeight);
-                                // console.log(
-                                //     "Расстояние до нижней границы родительского элемента:",
-                                //     bottomRect,
-                                //     "пикселей"
-                                // );
-                                cachedDistances.set(dropdownItem, bottomRect);
-                                this.dropdownFooter.style.bottom = bottomRect + "px";
+                            const updateDropdownFooterPositions = () => {
+                                if (
+                                    this.cacheFooterPositions &&
+                                    cachedDistances.has(dropdownItem)
+                                ) {
+                                    this.dropdownFooter.style.bottom =
+                                        cachedDistances.get(dropdownItem) + "px";
+                                    if (this.cacheFooterDebug) {
+                                        console.log(
+                                            "Кешированное значение:",
+                                            cachedDistances.get(dropdownItem)
+                                        );
+                                        console.log(cachedDistances);
+                                    }
+                                } else {
+                                    const selectedDropdownFooter = this.#inspectVariable(
+                                        dropdownItem,
+                                        this.dropFooter,
+                                        false,
+                                        false,
+                                        false
+                                    );
+                                    const bottomRect =
+                                        dropdownItem.offsetHeight -
+                                        (selectedDropdownFooter.offsetTop +
+                                            selectedDropdownFooter.offsetHeight);
+
+                                    if (this.cacheFooterDebug) {
+                                        console.log(
+                                            "Расстояние до нижней границы родительского элемента:",
+                                            bottomRect,
+                                            "пикселей"
+                                        );
+                                    }
+
+                                    if (this.cacheFooterPositions) {
+                                        cachedDistances.set(dropdownItem, bottomRect);
+                                    }
+
+                                    this.dropdownFooter.style.bottom = bottomRect + "px";
+                                }
+                            };
+
+                            updateDropdownFooterPositions();
+
+                            const handleResize = () => {
+                                if (resizeTimeout) {
+                                    cancelAnimationFrame(resizeTimeout);
+                                }
+
+                                resizeTimeout = requestAnimationFrame(() => {
+                                    // cachedDistances.clear();
+
+                                    const selectedDropdownFooter = this.#inspectVariable(
+                                        dropdownItem,
+                                        this.dropFooter,
+                                        false,
+                                        false,
+                                        false
+                                    );
+
+                                    const bottomRect =
+                                        dropdownItem.offsetHeight -
+                                        (selectedDropdownFooter.offsetTop +
+                                            selectedDropdownFooter.offsetHeight);
+
+                                    const cachedValue = cachedDistances.get(dropdownItem);
+                                    if (cachedValue !== bottomRect) {
+                                        cachedDistances.set(dropdownItem, bottomRect);
+                                        this.dropdownFooter.style.bottom = bottomRect + "px";
+                                        updateDropdownFooterPositions();
+                                    }
+                                });
+                            };
+                            handleResize();
+
+                            if (!isResizeHandlerAdded) {
+                                window.addEventListener("resize", handleResize.bind(this));
+                                isResizeHandlerAdded = true;
                             }
+
+                            // !
+                            // if (this.cacheFooterPositions && cachedDistances.has(dropdownItem)) {
+                            //     this.dropdownFooter.style.bottom =
+                            //         cachedDistances.get(dropdownItem) + "px";
+                            //     if (this.cacheFooterDebug) {
+                            //         console.log(
+                            //             "Кешированное значение:",
+                            //             cachedDistances.get(dropdownItem)
+                            //         );
+                            //         console.log(cachedDistances);
+                            //     }
+                            // } else {
+                            //     const selectedDropdownFooter = this.#inspectVariable(
+                            //         dropdownItem,
+                            //         this.dropFooter,
+                            //         false,
+                            //         false,
+                            //         false
+                            //     );
+                            //     const bottomRect =
+                            //         dropdownItem.offsetHeight -
+                            //         (selectedDropdownFooter.offsetTop +
+                            //             selectedDropdownFooter.offsetHeight);
+
+                            //     if (this.cacheFooterDebug) {
+                            //         console.log(
+                            //             "Расстояние до нижней границы родительского элемента:",
+                            //             bottomRect,
+                            //             "пикселей"
+                            //         );
+                            //     }
+
+                            //     if (this.cacheFooterPositions) {
+                            //         cachedDistances.set(dropdownItem, bottomRect);
+                            //     }
+
+                            //     this.dropdownFooter.style.bottom = bottomRect + "px";
+                            // }
+                            //!----
+
                             // 	const bottomRect =
                             // 		dropdownItem.offsetHeight -
                             // 		(selectedDropdownFooter.offsetTop +

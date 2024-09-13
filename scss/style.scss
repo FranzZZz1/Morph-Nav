@@ -157,10 +157,8 @@
             -webkit-transform: translateY(var(--morph-nav-vertical-transform));
             -ms-transform: translateY(var(--morph-nav-vertical-transform));
             transform: translateY(var(--morph-nav-vertical-transform));
-            -webkit-transition: -webkit-transform
-                var(--morph-nav-vertical-transform-trasition);
-            transition: -webkit-transform
-                var(--morph-nav-vertical-transform-trasition);
+            -webkit-transition: -webkit-transform var(--morph-nav-vertical-transform-trasition);
+            transition: -webkit-transform var(--morph-nav-vertical-transform-trasition);
             transition: transform var(--morph-nav-vertical-transform-trasition);
             transition: transform var(--morph-nav-vertical-transform-trasition),
                 -webkit-transform var(--morph-nav-vertical-transform-trasition);
@@ -235,15 +233,12 @@
                 -webkit-transition: width var(--bg-offset-transition),
                     height var(--bg-offset-transition),
                     -webkit-transform var(--bg-transform-transition);
-                transition: width var(--bg-offset-transition),
-                    height var(--bg-offset-transition),
+                transition: width var(--bg-offset-transition), height var(--bg-offset-transition),
                     -webkit-transform var(--bg-transform-transition);
                 transition: transform var(--bg-transform-transition),
-                    width var(--bg-offset-transition),
-                    height var(--bg-offset-transition);
+                    width var(--bg-offset-transition), height var(--bg-offset-transition);
                 transition: transform var(--bg-transform-transition),
-                    width var(--bg-offset-transition),
-                    height var(--bg-offset-transition),
+                    width var(--bg-offset-transition), height var(--bg-offset-transition),
                     -webkit-transform var(--bg-transform-transition);
             }
         }
